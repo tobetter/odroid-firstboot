@@ -1,1 +1,2 @@
 etc/init.d/firstboot /etc/init.d/
+sbin/firstboot-resizefs.sh /sbin/
