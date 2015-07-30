@@ -1,0 +1,13 @@
+Source: odroid-firstboot
+Section: misc
+Priority: extra
+Maintainer: Dongjin Kim <tobetter@gmail.com>
+Build-Depends: debhelper (>= 8.0.0)
+Standards-Version: 3.9.3
+Homepage: https://github.com/tobetter/odroid-firstboot
+
+Package: odroid-firstboot
+Architecture: armhf
+Depends: ${shlibs:Depens}, ${misc:Depends}, parted
+Description: Boot script to initiate on the first boot
+ This package will execute once on the first boot since installed.

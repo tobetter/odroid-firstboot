@@ -1,0 +1,9 @@
+#!/bin/sh
+
+set -e
+
+RCLOCAL="/etc/rc.local"
+SCRIPT="odroid-firstboot.sh"
+EXEC_SCRIPT="/sbin/${SCRIPT}"
+
+sed -i "/${SCRIPT}/d" ${RCLOCAL}
