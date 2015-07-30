@@ -17,7 +17,7 @@ MYSELF=$(basename $0)
 case "$1" in
     start)
         log_daemon_msg "Starting ${MYSELF}" &&
-            /usr/local/bin/firstboot-resizefs /dev/mmcblk0 2 &&
+            /sbin/firstboot-resizefs /dev/mmcblk0 2 &&
             dpkg --purge odroid-${MYSELF} &&
             log_end_msg $?
         ;;
