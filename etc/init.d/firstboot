@@ -18,6 +18,7 @@ case "$1" in
     start)
         log_daemon_msg "Starting ${MYSELF}" &&
             /sbin/firstboot-resizefs.sh ${DISK} 2 &&
+            rm /etc/init.d/${MYSELF} &&
             dpkg --purge odroid-${MYSELF} &&
             log_end_msg $?
         ;;
