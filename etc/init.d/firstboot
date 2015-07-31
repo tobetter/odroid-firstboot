@@ -12,14 +12,13 @@
 . /lib/lsb/init-functions
 
 DISK=/dev/mmcblk0
-MYSELF=$(basename $0)
 
 case "$1" in
     start)
-        log_daemon_msg "Starting ${MYSELF}" &&
+        log_daemon_msg "Starting firstboot" &&
             /sbin/firstboot-resizefs.sh ${DISK} 2 &&
-            rm /etc/init.d/${MYSELF} &&
-            dpkg --purge odroid-${MYSELF} &&
+            rm /etc/init.d/firstboot &&
+            dpkg --purge odroid-firstboot &&
             log_end_msg $?
         ;;
     stop)
