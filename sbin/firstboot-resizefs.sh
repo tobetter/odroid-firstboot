@@ -36,4 +36,5 @@ else
         resize2fs ${partition}
         fdisk -l ${disk}
         dpkg --purge odroid-firstboot
+        rm -f ${partgrowup}
 fi
