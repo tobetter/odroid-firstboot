@@ -7,11 +7,13 @@ disk="$1"
 partnum="$2"
 partition="${disk}p${partnum}"
 
-start=$(parted ${disk} -ms unit s p | grep "^${partnum}" | cut -f 2 -d:)
+partgrowup="/var/firstboot/rootfs-growup"
 
-echo "Extending the partition ${partition}..."
+rootfs_growup() {
+        echo "Extending the partition ${partition}..."
+        start=$(parted ${disk} -ms unit s p | grep "^${partnum}" | cut -f 2 -d:)
 
-fdisk ${disk} <<__EOF > /dev/null
+        fdisk ${disk} <<__EOF > /dev/null
 p
 d
 ${partnum}
@@ -22,9 +24,17 @@ ${start}
 
 w
 __EOF
+}
 
-echo "Resizing the partition..."
 
-partprobe
-resize2fs ${partition}
-fdisk -l ${disk}
+if [ ! -f ${partgrowup} ]; then
+        rootfs_growup &&
+                mkdir -p $(basename ${partgrowup}) &&
+                touch ${partgrowup} &&
+                reboot
+else
+        echo "Resizing the partition..."
+        resize2fs ${partition}
+        fdisk -l ${disk}
+        dpkg --purge odroid-firstboot
+fi
