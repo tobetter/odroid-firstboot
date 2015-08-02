@@ -7,7 +7,7 @@ disk="$1"
 partnum="$2"
 partition="${disk}p${partnum}"
 
-partgrowup="/var/firstboot/rootfs-growup"
+partgrowup="/var/firstboot-rootfs-growup"
 
 rootfs_growup() {
         echo "Extending the partition ${partition}..."
@@ -28,10 +28,9 @@ __EOF
 
 
 if [ ! -f ${partgrowup} ]; then
-        rootfs_growup &&
-                mkdir -p $(basename ${partgrowup}) &&
-                touch ${partgrowup} &&
-                reboot
+        rootfs_growup
+        touch ${partgrowup}
+        reboot
 else
         echo "Resizing the partition..."
         resize2fs ${partition}
