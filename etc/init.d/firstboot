@@ -1,7 +1,7 @@
 #!/bin/sh
 ### BEGIN INIT INFO
-# Provides:          resize2fs_once
-# Required-Start:
+# Provides: firstboot
+# Required-Start: mountall-bootclean
 # Required-Stop: 
 # Default-Start: 2 3 4 5 S
 # Default-Stop:
