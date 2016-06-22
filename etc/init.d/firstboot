@@ -11,12 +11,16 @@
 
 . /lib/lsb/init-functions
 
-DISK=/dev/mmcblk0
+UUID=`findmnt -nr -o uuid --target /`
+BLKDEV=`blkid -U ${UUID}`
+DEVICE=${BLKDEV#/dev/}
+PARTNUM=`cat /sys/class/block/${DEVICE}/partition`
+DISK=${DEVICE%p${PARTNUM}}
 
 case "$1" in
     start)
         log_daemon_msg "Starting firstboot" &&
-            /sbin/firstboot-resizefs.sh ${DISK} 2 &&
+            /sbin/firstboot-resizefs.sh ${DISK} ${PARTNUM} &&
             log_end_msg $?
         ;;
     stop)
