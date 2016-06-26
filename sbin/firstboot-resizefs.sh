@@ -6,14 +6,15 @@
 disk="$1"
 partnum="$2"
 partition="${disk}p${partnum}"
+device="/dev/${disk}"
 
 footprint="/.firstboot"
 
 rootfs_growup() {
         echo "Extending the partition ${partition}..."
-        start=$(parted ${disk} -ms unit s p | grep "^${partnum}" | cut -f 2 -d:)
+        start=$(parted ${device} -ms unit s p | grep "^${partnum}" | cut -f 2 -d:)
 
-        fdisk ${disk} <<__EOF > /dev/null
+        fdisk ${device} <<__EOF > /dev/null
 p
 d
 ${partnum}
@@ -36,7 +37,7 @@ fi
 
 echo "Resizing the partition..."
 resize2fs ${partition}
-fdisk -l ${disk}
+fdisk -l ${device}
 dpkg --purge odroid-firstboot
 rm -f ${footprint}
 
