@@ -7,7 +7,7 @@ disk="$1"
 partnum="$2"
 partition="${disk}p${partnum}"
 
-partgrowup="/var/firstboot-rootfs-growup"
+footprint="/.firstboot"
 
 rootfs_growup() {
         echo "Extending the partition ${partition}..."
@@ -27,14 +27,14 @@ __EOF
 }
 
 
-if [ ! -f ${partgrowup} ]; then
+if [ ! -f ${footprint} ]; then
         rootfs_growup
-        touch ${partgrowup}
+        echo ${partition} > ${footprint}
         reboot
 else
         echo "Resizing the partition..."
         resize2fs ${partition}
         fdisk -l ${disk}
         dpkg --purge odroid-firstboot
-        rm -f ${partgrowup}
+        rm -f ${footprint}
 fi
