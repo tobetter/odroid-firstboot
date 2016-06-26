@@ -32,10 +32,12 @@ if [ ! -f ${footprint} ]; then
         mount -o remount,rw /
         echo ${partition} > ${footprint}
         reboot
-else
-        echo "Resizing the partition..."
-        resize2fs ${partition}
-        fdisk -l ${disk}
-        dpkg --purge odroid-firstboot
-        rm -f ${footprint}
 fi
+
+echo "Resizing the partition..."
+resize2fs ${partition}
+fdisk -l ${disk}
+dpkg --purge odroid-firstboot
+rm -f ${footprint}
+
+exit 0
