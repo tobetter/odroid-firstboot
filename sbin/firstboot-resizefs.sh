@@ -29,6 +29,7 @@ __EOF
 
 if [ ! -f ${footprint} ]; then
         rootfs_growup
+        mount -o remount,rw /
         echo ${partition} > ${footprint}
         reboot
 else
