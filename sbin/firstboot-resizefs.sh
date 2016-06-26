@@ -21,7 +21,7 @@ ${partnum}
 n
 p
 ${partnum}
-${start}
+${start%s}
 
 w
 __EOF
