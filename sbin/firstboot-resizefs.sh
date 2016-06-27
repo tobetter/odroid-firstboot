@@ -1,12 +1,10 @@
 #!/bin/sh
 
-[ -z "$1" ] && echo "Disk to resize the partition is not selected!" && exit 1
-[ -z "$2" ] && echo "Please specify the partition index!" && exit 1
+uuid_ofroot=`findmnt -nr -o uuid --target /`
+partition=`blkid -U ${uuid_ofroot}`
+partnum=`cat /sys/class/block/${partition#/dev/}/partition`
+device=${partition%p${partnum}}
 
-disk="$1"
-partnum="$2"
-partition="/dev/${disk}p${partnum}"
-device="/dev/${disk}"
 reboot=false;
 
 footprint="/.firstboot"
