@@ -7,6 +7,7 @@ disk="$1"
 partnum="$2"
 partition="/dev/${disk}p${partnum}"
 device="/dev/${disk}"
+reboot=false;
 
 footprint="/.firstboot"
 
@@ -25,14 +26,18 @@ ${start%s}
 
 w
 __EOF
+	dialog --title "Reboot" --pause "The partition size of ${partition} is changed and will be resized on next boot. Your system will restart in 5 seconds." 11 40 5
+	if [ "$?" = "0" ]; then
+		mount -o remount,rw /
+		echo ${partition} > ${footprint}
+		reboot="true"
+	fi
 }
 
-
+echo ${footprint}
 if [ ! -f ${footprint} ]; then
         rootfs_growup
-        mount -o remount,rw /
-        echo ${partition} > ${footprint}
-        reboot
+	[ "$reboot" = "true" ] && reboot || exit 0
 fi
 
 echo "Resizing the partition..."
