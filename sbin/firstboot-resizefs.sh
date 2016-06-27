@@ -5,7 +5,7 @@
 
 disk="$1"
 partnum="$2"
-partition="${disk}p${partnum}"
+partition="/dev/${disk}p${partnum}"
 device="/dev/${disk}"
 
 footprint="/.firstboot"
