@@ -24,7 +24,12 @@ ${start%s}
 
 w
 __EOF
-	dialog --title "Reboot" --pause "The partition size of ${partition} is changed and will be resized on next boot. Your system will restart in 5 seconds." 11 40 5
+	ttydev=`tty | sed -e "s:/dev/::"`
+	if [ "${ttydev}" != "not a tty" ]; then
+		dialog --title "Reboot" \
+			--pause "The partition size of ${partition} is changed \
+and will be resized on next boot. Your system will restart in 5 seconds." 11 40 5
+	fi
 	if [ "$?" = "0" ]; then
 		mount -o remount,rw /
 		echo ${partition} > ${footprint}
