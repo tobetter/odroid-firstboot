@@ -46,6 +46,17 @@ fi
 echo "Resizing the partition..."
 resize2fs ${partition}
 fdisk -l ${device}
+
+#
+# New /etc/machine-id
+#
+MACHINE_ID_SETUP="/bin/systemd-machine-id-setup"
+if [ -f ${MACHINE_ID_SETUP} ]; then
+	rm -f /etc/machine-id
+	${MACHINE_ID_SETUP}
+	echo "I: '/etc/machine-id' is regenerated : "$(cat /etc/machine-id)
+fi
+
 dpkg --purge odroid-firstboot
 rm -f ${footprint}
 
