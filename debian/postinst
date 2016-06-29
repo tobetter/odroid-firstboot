@@ -2,4 +2,13 @@
 
 set -e
 
-update-rc.d firstboot defaults
+RCLOCAL="/etc/rc.local"
+FIRSTBOOT_SCRIPT="/sbin/firstboot-resizefs.sh"
+
+sed -i '/exit 0/d' ${RCLOCAL}
+sed -i '/${FIRSTBOOT_SCRIPT}/d' ${RCLOCAL}
+
+cat>>${RCLOCAL}<<__EOF
+test -f ${FIRSTBOOT_SCRIPT} && ${FIRSTBOOT_SCRIPT}
+exit 0
+__EOF

@@ -1,6 +1,0 @@
-#!/bin/sh
-
-set -e
-
-rm -rf /etc/init.d/firstboot
-update-rc.d firstboot remove
