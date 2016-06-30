@@ -19,6 +19,15 @@ on_firstboot() {
 	echo "I: the partition table for ${part_ofroot} is changed..."
 
 	#
+	# Replace the UUID of root file system
+	#
+	tune2fs -O ^uninit_bg ${part_ofroot}
+	tune2fs -U `uuidgen` ${part_ofroot}
+	tune2fs -O +uninit_bg ${part_ofroot}
+
+	uuid_ofroot=`findmnt -nr -o uuid --target /`
+
+	#
 	# Create default mount table '/etc/fstab'
 	#
 	bootdir="/boot"
