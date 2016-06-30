@@ -1,31 +1,53 @@
 #!/bin/sh
 
 uuid_ofroot=`findmnt -nr -o uuid --target /`
-partition=`blkid -U ${uuid_ofroot}`
-partnum=`cat /sys/class/block/${partition#/dev/}/partition`
-device=${partition%p${partnum}}
+part_ofroot=`blkid -U ${uuid_ofroot}`
+pnum_ofroot=`cat /sys/class/block/${part_ofroot#/dev/}/partition`
+
+device=${part_ofroot%p${pnum_ofroot}}
 
 reboot=false;
 
 footprint="/.firstboot"
 
-
 on_firstboot() {
 	#
 	# Extend the root partition as much as available space in boot disk.
 	#
-        start=$(parted ${device} -ms unit s p | grep "^${partnum}" | cut -f 2 -d:)
-	echo -e "o\nd\n${partnum}\nn\np\n${partnum}\n${start%s}\n\nw" | fdisk ${device}
-        echo "I: the partition table for ${partition} is changed..."
+	start=$(parted ${device} -ms unit s p | grep "^${pnum_ofroot}" | cut -f 2 -d:)
+	echo -e "o\nd\n${pnum_ofroot}\nn\np\n${pnum_ofroot}\n${start%s}\n\nw" | fdisk ${device}
+	echo "I: the partition table for ${part_ofroot} is changed..."
+
+	#
+	# Create default mount table '/etc/fstab'
+	#
+	bootdir="/boot"
+	fstab="/etc/fstab"
+	part_ofboot=`blkid -L BOOT | grep ${device}`
+	uuid_ofboot=`findmnt -nr -o uuid --target ${bootdir}`
+
+	[ `mount | grep ${bootdir} > /dev/null` ] || umount ${bootdir}
+	mount ${part_ofboot} ${bootdir}
+
+	# Overwrite installed mount table file
+	echo "# DEFAULT MOUNT TABLE, AUTOMATICALLY CREATED BY 'ODROID-FIRSTBOOT'" > ${fstab}
+	echo "" >> ${fstab}
+	cat /proc/mounts | grep ${part_ofroot} >> ${fstab}
+	cat /proc/mounts | grep ${part_ofboot} >> ${fstab}
+
+	sed -i "s,${part_ofroot},UUID=${uuid_ofroot},g" ${fstab}
+	sed -i "s,${part_ofboot},UUID=${uuid_ofboot},g" ${fstab}
+
+	echo "I: default mount table is created to ${fstab}"
 
 	#
 	# Display reboot message
 	#
 	ttydev=`tty | sed -e "s:/dev/::"`
-	[ "${ttydev}" != "not a tty" ] && dialog --title "Firstboot" --pause "The partition size of ${partition} is changed and will be resized on next boot. Your system will restart in 5 seconds." 11 40 5
+	[ "${ttydev}" != "not a tty" ] && dialog --title "Firstboot" --pause "The partition size of ${part_ofroot} is changed and will be resized on next boot. Your system will restart in 5 seconds." 11 40 5
 	if [ "$?" = "0" ]; then
 		mount -o remount,rw /
-		echo ${partition} > ${footprint}
+		echo ${part_ofroot} > ${footprint}
 		echo "I: ${footprint} is created"
 		reboot="true"
 	fi
@@ -38,8 +60,8 @@ on_firstboot() {
 ###############################################################################
 # Start 2nd stage of firstboot & resizing the root file system
 #
-echo "I: the partition, ${partition}, is being resized..."
-resize2fs ${partition}
+echo "I: the partition, ${part_ofroot}, is being resized..."
+resize2fs ${part_ofroot}
 fdisk -l ${device}
 echo "I: done."
 
