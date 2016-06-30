@@ -3,7 +3,7 @@
 set -e
 
 RCLOCAL="/etc/rc.local"
-SCRIPT="firstboot-resizefs.sh"
+SCRIPT="odroid-firstboot.sh"
 EXEC_SCRIPT="/sbin/${SCRIPT}"
 
 sed -i "/${SCRIPT}/d" ${RCLOCAL}

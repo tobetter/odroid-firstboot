@@ -1,1 +1,1 @@
-sbin/firstboot-resizefs.sh /sbin/
+sbin/odroid-firstboot.sh /sbin/
