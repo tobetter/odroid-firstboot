@@ -61,8 +61,17 @@ if [ -f ${MACHINE_ID_SETUP} ]; then
 	echo "I: '/etc/machine-id' is regenerated : "$(cat /etc/machine-id)
 fi
 
-echo "I: removing the package 'odroid-firstboot'..."
-dpkg --purge odroid-firstboot
+#
+# Cleaning unnecessary package(s)
+#
+packages="odroid-firstboot"
+hwpack="hwpack-odroid-xu4"
+dpkg-query --status ${hwpack} > /dev/null 2>&1
+[ "$?" = "0" ] && packages="${packages} ${hwpack}"
+
+echo "I: cleaning unnecessary package(s)..."
+dpkg --purge ${packages}
+
 rm -f ${footprint}
 
 echo "I: The 'firstboot' is finished, your system is initiated completely"
