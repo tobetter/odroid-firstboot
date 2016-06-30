@@ -6,10 +6,4 @@ RCLOCAL="/etc/rc.local"
 SCRIPT="firstboot-resizefs.sh"
 EXEC_SCRIPT="/sbin/${SCRIPT}"
 
-sed -i '/exit 0/d' ${RCLOCAL}
 sed -i "/${SCRIPT}/d" ${RCLOCAL}
-
-cat>>${RCLOCAL}<<__EOF
-test -f ${EXEC_SCRIPT} && ${EXEC_SCRIPT}
-exit 0
-__EOF
