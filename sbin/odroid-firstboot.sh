@@ -101,6 +101,12 @@ echo "I: cleaning unnecessary package(s)..."
 dpkg --purge ${packages}
 
 #
+# Remove unnecessary package server file
+#
+rm -f /etc/apt/source.list.d/hwpack.tobetter.list
+echo "I: unnecessary package server file is removed"
+
+#
 # Remove footprint to start Firstboot
 #
 rm -f ${footprint}
