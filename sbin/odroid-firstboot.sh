@@ -61,7 +61,7 @@ if [ -f ${MACHINE_ID_SETUP} ]; then
 	echo "I: '/etc/machine-id' is regenerated : "$(cat /etc/machine-id)
 fi
 
-echo "I: removing the package 'odroid-firstboot'...")
+echo "I: removing the package 'odroid-firstboot'..."
 dpkg --purge odroid-firstboot
 rm -f ${footprint}
 
