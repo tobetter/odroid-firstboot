@@ -50,6 +50,11 @@ on_firstboot() {
 	echo "I: default mount table is created to ${fstab}"
 
 	#
+	# Remove default SSH key to be generated on next boot
+	#
+	rm -f /etc/ssh/ssh_host_dsa_key
+
+	#
 	# Display reboot message
 	#
 	ttydev=`tty | sed -e "s:/dev/::"`
