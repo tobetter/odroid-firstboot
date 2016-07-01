@@ -94,7 +94,7 @@ fi
 # Cleaning unnecessary package(s)
 #
 packages="odroid-firstboot"
-hwpack="hwpack-odroid-xu4"
+hwpack="hwpack-odroidxu4"
 dpkg-query --status ${hwpack} > /dev/null 2>&1
 [ "$?" = "0" ] && packages="${packages} ${hwpack}"
 
