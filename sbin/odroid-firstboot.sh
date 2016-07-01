@@ -23,8 +23,6 @@ on_firstboot() {
 	tune2fs -U `uuidgen` ${part_ofroot}
 	tune2fs -O +uninit_bg ${part_ofroot}
 
-	uuid_ofroot=`findmnt -nr -o uuid --target /`
-
 	#
 	# Create default mount table '/etc/fstab'
 	#
@@ -34,16 +32,18 @@ on_firstboot() {
 
 	[ `mount | grep ${bootdir} > /dev/null` ] || umount ${bootdir}
 	mount ${part_ofboot} ${bootdir}
-	uuid_ofboot=`findmnt -nr -o uuid --target ${bootdir}`
+
+	uuid_ofboot=`blkid -s UUID -o value ${part_ofboot}`
+	uuid_ofroot=`blkid -s UUID -o value ${part_ofroot}`
 
 	# Overwrite installed mount table file
 	echo "# DEFAULT MOUNT TABLE, AUTOMATICALLY CREATED BY 'ODROID-FIRSTBOOT'" > ${fstab}
 	echo "" >> ${fstab}
-	cat /proc/mounts | grep ${part_ofroot} >> ${fstab}
 	cat /proc/mounts | grep ${part_ofboot} >> ${fstab}
+	cat /proc/mounts | grep ${part_ofroot} >> ${fstab}
 
-	sed -i "s,${part_ofroot},UUID=${uuid_ofroot},g" ${fstab}
 	sed -i "s,${part_ofboot},UUID=${uuid_ofboot},g" ${fstab}
+	sed -i "s,${part_ofroot},UUID=${uuid_ofroot},g" ${fstab}
 
 	echo "I: default mount table is created to ${fstab}"
 
