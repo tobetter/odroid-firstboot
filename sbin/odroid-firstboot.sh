@@ -6,8 +6,6 @@ pnum_ofroot=`cat /sys/class/block/${part_ofroot#/dev/}/partition`
 
 device=${part_ofroot%p${pnum_ofroot}}
 
-reboot=false;
-
 footprint="/.firstboot"
 
 on_firstboot() {
@@ -57,14 +55,17 @@ on_firstboot() {
 	#
 	# Display reboot message
 	#
+	reboot="true";
+
 	ttydev=`tty | sed -e "s:/dev/::"`
-	[ "${ttydev}" != "not a tty" ] && dialog --title "Firstboot" --pause "The partition size of ${part_ofroot} is changed and will be resized on next boot. Your system will restart in 5 seconds." 11 40 5
-	if [ "$?" = "0" ]; then
-		mount -o remount,rw /
-		echo ${part_ofroot} > ${footprint}
-		echo "I: ${footprint} is created"
-		reboot="true"
+	if [ "${ttydev}" != "not a tty" ]; then
+		dialog --title "Firstboot" --pause "The partition size of ${part_ofroot} is changed and will be resized on next boot. Your system will restart in 5 seconds." 11 40 5
+		[ "$?" = "0" ] || reboot="false"
 	fi
+
+	mount -o remount,rw /
+	echo ${part_ofroot} > ${footprint}
+	echo "I: ${footprint} is created, will be continued on next boot"
 
 	[ "$reboot" = "true" ] && reboot || exit 0
 }
