@@ -33,10 +33,10 @@ on_firstboot() {
 	bootdir="/boot"
 	fstab="/etc/fstab"
 	part_ofboot=`blkid -L BOOT | grep ${device}`
-	uuid_ofboot=`findmnt -nr -o uuid --target ${bootdir}`
 
 	[ `mount | grep ${bootdir} > /dev/null` ] || umount ${bootdir}
 	mount ${part_ofboot} ${bootdir}
+	uuid_ofboot=`findmnt -nr -o uuid --target ${bootdir}`
 
 	# Overwrite installed mount table file
 	echo "# DEFAULT MOUNT TABLE, AUTOMATICALLY CREATED BY 'ODROID-FIRSTBOOT'" > ${fstab}
