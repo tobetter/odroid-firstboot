@@ -48,6 +48,15 @@ on_firstboot() {
 	echo "I: default mount table is created to ${fstab}"
 
 	#
+	# Add UUID of root file system to kernel parameter in 'boot.ini'
+	#
+	boot_ini="${bootdir}/boot.ini"
+	if [ -f ${boot_ini} ]; then
+		sed -i "s/.*LABEL=rootfs.*/setenv rootdev=\"UUID=${uuid_ofroot}\"/" ${boot_ini}
+		echo "I: kernel parameter 'root=' in ${boot_init} is changed to use UUID"
+	fi
+
+	#
 	# Remove default SSH key to be generated on next boot
 	#
 	rm -f /etc/ssh/ssh_host_dsa_key
