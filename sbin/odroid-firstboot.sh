@@ -102,7 +102,7 @@ fi
 #
 # Remove unnecessary package server file
 #
-rm -f /etc/apt/source.list.d/hwpack.tobetter.list
+rm -f /etc/apt/sources.list.d/hwpack.tobetter.list
 echo "I: unnecessary package server file is removed"
 
 #
