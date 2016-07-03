@@ -100,6 +100,12 @@ if [ -f ${MACHINE_ID_SETUP} ]; then
 fi
 
 #
+# Remove unnecessary package server file
+#
+rm -f /etc/apt/source.list.d/hwpack.tobetter.list
+echo "I: unnecessary package server file is removed"
+
+#
 # Cleaning unnecessary package(s)
 #
 packages="odroid-firstboot"
@@ -109,12 +115,8 @@ dpkg-query --status ${hwpack} > /dev/null 2>&1
 
 echo "I: cleaning unnecessary package(s)..."
 dpkg --purge ${packages}
-
-#
-# Remove unnecessary package server file
-#
-rm -f /etc/apt/source.list.d/hwpack.tobetter.list
-echo "I: unnecessary package server file is removed"
+apt-get update
+apt-get autoremove
 
 #
 # Remove footprint to start Firstboot
