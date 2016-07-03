@@ -52,7 +52,7 @@ on_firstboot() {
 	#
 	boot_ini="${bootdir}/boot.ini"
 	if [ -f ${boot_ini} ]; then
-		sed -i "s/.*LABEL=rootfs.*/setenv rootdev \"UUID=${uuid_ofroot}\"/" ${boot_ini}
+		sed -i "s/^setenv rootdev.*$/setenv rootdev \"UUID=${uuid_ofroot}\"/" ${boot_ini}
 		echo "I: kernel parameter 'root=' in ${boot_init} is changed to use UUID"
 	fi
 
