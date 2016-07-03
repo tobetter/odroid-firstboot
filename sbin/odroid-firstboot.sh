@@ -114,6 +114,8 @@ dpkg-query --status ${hwpack} > /dev/null 2>&1
 [ "$?" = "0" ] && packages="${packages} ${hwpack}"
 
 echo "I: cleaning unnecessary package(s)..."
+rm -f ./var/lib/dpkg/lock
+rm -f ./var/lib/apt/lists/lock
 dpkg --purge ${packages}
 apt-get update
 apt-get autoremove
