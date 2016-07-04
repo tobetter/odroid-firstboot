@@ -115,8 +115,6 @@ dpkg-query --status ${hwpack} > /dev/null 2>&1
 
 echo "I: cleaning unnecessary package(s)..."
 dpkg --purge ${packages}
-apt-get update
-apt-get autoremove
 
 #
 # Remove footprint to start Firstboot
