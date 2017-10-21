@@ -7,7 +7,7 @@ Standards-Version: 3.9.3
 Homepage: https://github.com/tobetter/odroid-firstboot
 
 Package: odroid-firstboot
-Architecture: armhf
+Architecture: any
 Depends: ${shlibs:Depens}, ${misc:Depends}, parted
 Description: Boot script to initiate on the first boot
  This package will execute once on the first boot since installed.
