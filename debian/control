@@ -1,0 +1,11 @@
+Source: odroid-firstboot
+Section: admin
+Priority: standard
+Maintainer: Dongjin Kim <tobetter@gmail.com>
+Build-Depends: debhelper, po-debconf
+Vcs-Git: https://github.com/tobetter/odroid-firstboot.git
+Vcs-Browser: https://github.com/tobetter/odroid-firstboot.git
+
+Package: odroid-firstboot
+Architecture: arm64
+Description: ODROID FirstBoot package

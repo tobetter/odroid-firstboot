@@ -1,0 +1,16 @@
+[Unit]
+Description=FirstBoot Service for ODROID
+DefaultDependencies=no
+Conflicts=shutdown.target
+After=systemd-remount-fs.service
+Before=local-fs.target
+ConditionPathExists=!/var/lib/odroid-firstboot.done
+
+[Service]
+ExecStart=/usr/share/odroid-firstboot/odroid-firstboot
+ExecStartPost=/usr/bin/touch /var/lib/odroid-firstboot.done
+Type=oneshot
+RemainAfterExit=no
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,50 @@
+#!/bin/bash
+
+source /usr/share/odroid-firstboot/functions
+
+PATH=/sbin:/usr/sbin:/bin:/usr/bin
+MOUNTDIR=/tmp/odroid-firstboot
+
+ROOT=$(cat /proc/cmdline | sed -n 's/.*root=\([^ ]*\).*/\1/p')
+
+case ${ROOT} in
+	UUID=*)
+		ROOTPART=$(realpath /dev/disk/by-uuid/${ROOT#*=})
+		;;
+	LABEL=*)
+		ROOTPART=$(realpath /dev/disk/by-label/${ROOT#*=})
+		;;
+	*)
+		ROOTPART=${ROOT}
+		;;
+esac
+
+DISK=$(lsblk -no PKNAME --paths ${ROOTPART})
+
+# Load 'odroid-firstboot.conf' in the partition with the lable 'BOOT'
+BOOTPART=$(realpath /dev/disk/by-label/BOOT 2>/dev/null)
+if [ -z $BOOTPART ]; then
+	BOOTPART=$(lsblk -lnp -o NAME ${DISK} | grep -E "${DISK}p?1$")
+fi
+
+if [ -n ${BOOTPART} ]; then
+	mkdir -p ${MOUNTDIR}
+	if mount -o ro ${BOOTPART} ${MOUNTDIR} 2>/dev/null; then
+		if [ -f ${MOUNTDIR}/odroid-firstboot.conf ]; then
+			source ${MOUNTDIR}/odroid-firstboot.conf
+			rm -f ${MOUNTDIR}/odroid-firstboot.conf 2>/dev/null
+		fi
+		umount ${MOUNTDIR} && rmdir ${MOUNTDIR}
+	fi
+fi
+
+# Normalize SWAP_SIZE by stripping 'iB' (e.g., 2GiB -> 2G)
+# to ensure a consistent format
+[ -z ${SWAP_SIZE} ] || SWAP_SIZE=$(echo ${SWAP_SIZE} | tr -d 'iB')
+
+[ -z ${DISK} ] || do_repart ${DISK} ${SWAP_SIZE}
+[ -z ${SWAPPART} ] || do_swap_on
+
+do_ssh_keygen
+
+exit 0
