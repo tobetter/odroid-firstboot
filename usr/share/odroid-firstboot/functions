@@ -54,8 +54,11 @@ do_setup_ssh() {
 
 	mkdir -p /etc/ssh/sshd_config.d/
 	cat>${SSH_DROPIN}<<__EOF
-# Created by odroid-firstboot for easy remote access
+# Enable password authentication for remote access
+# Required for PAM-based login across different OS versions
+ChallengeResponseAuthentication yes
 PasswordAuthentication yes
+UsePAM yes
 __EOF
 	chmod 644 ${SSH_DROPIN}
 }
