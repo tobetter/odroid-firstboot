@@ -43,9 +43,21 @@ do_repart() {
 	resize2fs ${ROOTPART}
 }
 
-do_ssh_keygen() {
+do_setup_ssh() {
+	echo "Re-initializing SSH host keys and access configuration..."
 	rm -f /etc/ssh/ssh_host* \
 		&& ssh-keygen -A
+
+	echo "Applying ODROID-specific SSH overrides..."
+
+	local SSH_DROPIN="/etc/ssh/sshd_config.d/99-odroid.conf"
+
+	mkdir -p /etc/ssh/sshd_config.d/
+	cat>${SSH_DROPIN}<<__EOF
+# Created by odroid-firstboot for easy remote access
+PasswordAuthentication yes
+__EOF
+	chmod 644 ${SSH_DROPIN}
 }
 
 do_swap_on() {

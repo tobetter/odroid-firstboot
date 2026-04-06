@@ -45,6 +45,6 @@ fi
 [ -z ${DISK} ] || do_repart ${DISK} ${SWAP_SIZE}
 [ -z ${SWAPPART} ] || do_swap_on
 
-do_ssh_keygen
+do_setup_ssh
 
 exit 0
