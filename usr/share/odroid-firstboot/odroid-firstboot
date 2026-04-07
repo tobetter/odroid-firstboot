@@ -3,47 +3,52 @@
 source /usr/share/odroid-firstboot/functions
 
 PATH=/sbin:/usr/sbin:/bin:/usr/bin
-MOUNTDIR=/tmp/odroid-firstboot
+MOUNTDIR="/tmp/odroid-firstboot"
 
 ROOT=$(cat /proc/cmdline | sed -n 's/.*root=\([^ ]*\).*/\1/p')
 
-case ${ROOT} in
+case "${ROOT}" in
 	UUID=*)
-		ROOTPART=$(realpath /dev/disk/by-uuid/${ROOT#*=})
+		ROOTPART=$(realpath /dev/disk/by-uuid/${ROOT#*=} 2>/dev/null)
 		;;
 	LABEL=*)
-		ROOTPART=$(realpath /dev/disk/by-label/${ROOT#*=})
+		ROOTPART=$(realpath /dev/disk/by-label/${ROOT#*=} 2>/dev/null)
 		;;
 	*)
-		ROOTPART=${ROOT}
+		ROOTPART="${ROOT}"
 		;;
 esac
 
-DISK=$(lsblk -no PKNAME --paths ${ROOTPART})
+ROOT_DEV_NAME="${ROOTPART##*/}"
+if [ -L "/sys/class/block/${ROOT_DEV_NAME}/.." ]; then
+	DISK_NAME=$(basename $(readlink -f "/sys/class/block/${ROOT_DEV_NAME}/.."))
+	DISK="/dev/${DISK_NAME}"
+fi
 
 # Load 'odroid-firstboot.conf' in the partition with the lable 'BOOT'
 BOOTPART=$(realpath /dev/disk/by-label/BOOT 2>/dev/null)
-if [ -z $BOOTPART ]; then
-	BOOTPART=$(lsblk -lnp -o NAME ${DISK} | grep -E "${DISK}p?1$")
+
+if [ -z "${BOOTPART}" ] && [ -n "${DISK_NAME}" ]; then
+	for part in /sys/class/block/${DISK_NAME}*; do
+		[ -f "${part}/partition" ] || continue
+		if [ "$(cat "${part}/partition")" = "1" ]; then
+			BOOTPART="/dev/${part##*/}"
+			break
+		fi
+	done
 fi
 
-if [ -n ${BOOTPART} ]; then
-	mkdir -p ${MOUNTDIR}
-	if mount -o ro ${BOOTPART} ${MOUNTDIR} 2>/dev/null; then
-		if [ -f ${MOUNTDIR}/odroid-firstboot.conf ]; then
-			source ${MOUNTDIR}/odroid-firstboot.conf
-			rm -f ${MOUNTDIR}/odroid-firstboot.conf 2>/dev/null
-		fi
-		umount ${MOUNTDIR} && rmdir ${MOUNTDIR}
-	fi
+if [ -n "${BOOTPART}" ]; then
+	mkdir -p "${MOUNTDIR}" 2>/dev/null \
+		&& do_load_firstboot_config "${BOOTPART}" "${MOUNTDIR}"
 fi
 
 # Normalize SWAP_SIZE by stripping 'iB' (e.g., 2GiB -> 2G)
 # to ensure a consistent format
-[ -z ${SWAP_SIZE} ] || SWAP_SIZE=$(echo ${SWAP_SIZE} | tr -d 'iB')
+[ -z "${SWAP_SIZE}" ] || SWAP_SIZE=$(echo "${SWAP_SIZE}" | tr -d 'iB')
 
-[ -z ${DISK} ] || do_repart ${DISK} ${SWAP_SIZE}
-[ -z ${SWAPPART} ] || do_swap_on
+[ -z "${DISK}" ] || do_repart "${DISK}" "${SWAP_SIZE}"
+[ -z "${SWAPPART}" ] || do_swap_on "${SWAPPART}"
 
 do_setup_ssh
 

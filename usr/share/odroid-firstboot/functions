@@ -1,81 +1,151 @@
 # vim: filetype=sh
 
+# Load first-boot configuration from the BOOT partition
+do_load_firstboot_config() {
+	local boot_part="${1}"
+	local mount_dir="${2}"
+
+	# Check if the boot partition exists as a block device
+	[ -b "${boot_part}" ] || return 1
+
+	# Mount the partition to read the configuration file
+	if mount -o rw "${boot_part}" "${mount_dir}" 2>/dev/null; then
+		if [ -f "${mount_dir}/odroid-firstboot.conf" ]; then
+			# Source the configuration (Global variables like SWAP_SIZE may be set here)
+			source "${mount_dir}/odroid-firstboot.conf"
+			rm -f "${mount_dir}/odroid-firstboot.conf" 2>/dev/null
+		fi
+		# Clean up: unmount and remove the temporary mount directory
+		umount "${mount_dir}" && rmdir "${mount_dir}"
+	fi
+}
+
+# Inform the kernel of partition table changes
 do_part_probe() {
-	partx -u ${1} \
-		|| partprobe ${1}
+	local target_disk="${1}"
+
+	# Try partx first, fallback to partprobe
+	partx -u "${target_disk}" || partprobe "${target_disk}"
 	sleep 1
 }
 
+# Resize the root partition and optionally create a swap partition
 do_repart() {
-	local DISK=${1}
-	local SWAP_SIZE=${2}
+	local disk="${1}"       # e.g., /dev/mmcblk0
+	local swap_size="${2}"  # e.g., 2G
+	local disk_name="${disk##*/}"
 
-	PNUM=$(lsblk -no PARTN ${ROOTPART})
-	if [ -z $PNUM ]; then
-		PNUM=$(echo ${ROOTPART} | grep -oE '[0-9]+$')
+	# Validate disk existence via sysfs
+	if [ ! -f "/sys/class/block/${disk_name}/size" ]; then
+		echo "E: Cannot find disk size information for ${disk_name}"
+		exit 1
 	fi
 
-	TOTAL_SECTORS=$(($(lsblk -dbno SIZE ${DISK}) / 512))
+	# Get total disk capacity (Unit: 512B sectors)
+	local total_sectors=$(cat "/sys/class/block/${disk_name}/size")
+	echo "I: Total sectors of ${disk_name}: ${total_sectors}"
 
-	ROOT_START=$(lsblk -no START ${ROOTPART})
-	ROOT_SECTORS=$((TOTAL_SECTORS - ROOT_START))
+	# Reference global ROOTPART; handle naming for sysfs
+	local root_dev_name="${ROOTPART##*/}"
+	local root_sys_path="/sys/class/block/${root_dev_name}"
 
-	if [ ! -z ${SWAP_SIZE} ]; then
-		SWAP_SECTORS=$(($(numfmt --from=iec ${SWAP_SIZE}) / 512))
-		ROOT_SECTORS=$((TOTAL_SECTORS - ROOT_START - SWAP_SECTORS))
-		SWAP_START=$((ROOT_START + ROOT_SECTORS))
+	# Detect the partition number (PNUM)
+	local pnum=""
+	if [ -f "${root_sys_path}/partition" ]; then
+		pnum=$(cat "${root_sys_path}/partition")
+	else
+		pnum=$(udevadm info --query=property --name="${ROOTPART}" \
+			| grep ID_PART_ENTRY_NUMBER | cut -d= -f2)
+	fi
+	[ -z "${pnum}" ] && pnum=$(echo "${root_dev_name}" | grep -oE '[0-9]+$')
+
+	# Identify the start sector of the root partition
+	local root_start=0
+	if [ -f "${root_sys_path}/start" ]; then
+		root_start=$(cat "${root_sys_path}/start")
 	fi
 
-	echo ",${ROOT_SECTORS}," \
-		| sfdisk --force --no-reread ${DISK} -N ${PNUM}
+	echo "I: Root partition (${root_dev_name}) starts at sector ${root_start}"
 
-	if [ ! -z ${SWAP_SIZE} ]; then
-		echo "${SWAP_START},,82" \
-			| sfdisk --force --no-reread --append ${DISK}
+	# Calculate new sector boundaries
+	local root_sectors=$((total_sectors - root_start))
+	local swap_start=0
+
+	if [ -n "${swap_size}" ]; then
+		# Convert human-readable size to sectors
+		local swap_sectors=$(( $(numfmt --from=iec "${swap_size}") / 512 ))
+		root_sectors=$((total_sectors - root_start - swap_sectors))
+		swap_start=$((root_start + root_sectors))
 	fi
 
-	do_part_probe ${DISK}
+	# 1. Update the Root partition size
+	echo "${root_start},${root_sectors}," \
+		| sfdisk --force --no-reread "${disk}" -N "${pnum}"
 
-	if [ ! -z ${SWAP_SIZE} ]; then
-		SWAPPART=$(lsblk -lno NAME --paths ${DISK} | tail -1)
+	# 2. Append a New Swap partition if requested
+	if [ -n "${swap_size}" ]; then
+		echo "${swap_start},,82" \
+			| sfdisk --force --no-reread --append "${disk}"
 	fi
 
-	resize2fs ${ROOTPART}
+	# Refresh partition table in kernel
+	do_part_probe "${disk}"
+
+	# Identify the swap device path and update global SWAPPART
+	if [ -n "${swap_size}" ]; then
+		local last_part_sys=$(ls -d /sys/block/${disk_name}/${disk_name}* 2>/dev/null \
+			| sort -V | tail -1)
+
+		SWAPPART="/dev/${last_part_sys##*/}"
+		echo "I: Created Swap partition at ${SWAPPART}"
+	fi
+
+	# Finalize filesystem expansion
+	echo "I: Resizing root filesystem on ${ROOTPART}"
+	resize2fs "${ROOTPART}"
 }
 
+# Re-initialize SSH host keys and security overrides
 do_setup_ssh() {
-	echo "Re-initializing SSH host keys and access configuration..."
-	rm -f /etc/ssh/ssh_host* \
-		&& ssh-keygen -A
+	echo "I: Re-initializing SSH host keys..."
+	rm -f /etc/ssh/ssh_host* && ssh-keygen -A
 
-	echo "Applying ODROID-specific SSH overrides..."
-
-	local SSH_DROPIN="/etc/ssh/sshd_config.d/99-odroid.conf"
+	local ssh_dropin="/etc/ssh/sshd_config.d/99-odroid.conf"
 
 	mkdir -p /etc/ssh/sshd_config.d/
-	cat>${SSH_DROPIN}<<__EOF
-# Enable password authentication for remote access
-# Required for PAM-based login across different OS versions
+	cat > "${ssh_dropin}" <<__EOF
+# ODROID First-boot SSH Configuration
 ChallengeResponseAuthentication yes
+KbdInteractiveAuthentication yes
 PasswordAuthentication yes
 UsePAM yes
 __EOF
-	chmod 644 ${SSH_DROPIN}
+
+	chmod 0644 "${ssh_dropin}"
 }
 
+# Initialize and enable the swap partition
 do_swap_on() {
-	local UUID=${1}
-	[ -z ${UUID} ]&& UUID=$(uuidgen)
+	# Use global SWAPPART if no argument is passed
+	local target_swap="${1:-$SWAPPART}"
+	local uuid_val="${2:-$(uuidgen 2>/dev/null)}"
 
-	echo "Initializing swap on ${SWAPPART}..."
-	mkswap --force ${SWAPPART}
-	mkswap --uuid ${UUID} ${SWAPPART}
+	[ -b "${target_swap}" ] || { echo "E: Swap device ${target_swap} not found"; return 1; }
 
+	echo "I: Initializing swap on ${target_swap}..."
+	mkswap --force "${target_swap}"
+
+	# Generate or apply UUID
+	if [ -n "${uuid_val}" ]; then
+		mkswap --uuid "${uuid_val}" "${target_swap}"
+	else
+		uuid_val=$(lsblk -no UUID "${target_swap}" 2>/dev/null)
+	fi
+
+	# Update /etc/fstab safely
 	sed -i "/swap/d" /etc/fstab
+	printf "UUID=%s\tnone\tswap\tsw\t0\t0\n" "${uuid_val}" >> /etc/fstab
 
-	printf "UUID=\"%s\"\tnone\tswap\tsw\t0\t0\n" \
-		${UUID} >> /etc/fstab
-
+	# Activate swap
 	swapon -a
 }
-
