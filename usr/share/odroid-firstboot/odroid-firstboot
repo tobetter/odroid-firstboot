@@ -20,9 +20,10 @@ case "${ROOT}" in
 esac
 
 ROOT_DEV_NAME="${ROOTPART##*/}"
-if [ -L "/sys/class/block/${ROOT_DEV_NAME}/.." ]; then
-	DISK_NAME=$(basename $(readlink -f "/sys/class/block/${ROOT_DEV_NAME}/.."))
+if [ -d "/sys/class/block/${ROOT_DEV_NAME}/.." ]; then
+	DISK_NAME=$(basename $(realpath "/sys/class/block/${ROOT_DEV_NAME}/.."))
 	DISK="/dev/${DISK_NAME}"
+	echo "DISK of boot storage is ${DISK}"
 fi
 
 # Load 'odroid-firstboot.conf' in the partition with the lable 'BOOT'
