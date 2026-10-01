@@ -7,5 +7,6 @@ Vcs-Git: https://github.com/tobetter/odroid-firstboot.git
 Vcs-Browser: https://github.com/tobetter/odroid-firstboot.git
 
 Package: odroid-firstboot
-Architecture: arm64
+Architecture: any
+Depends: ${misc:Depends}, btrfs-progs, e2fsprogs, util-linux, parted
 Description: ODROID FirstBoot package
